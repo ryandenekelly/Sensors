@@ -16,6 +16,39 @@ MPU6050::MPU6050(I2C_HandleTypeDef* i2c, std::uint8_t device_address)
     m_OffsetGz = 0;
     m_OffsetAngleX = 0.0;
     m_OffsetAngleY = 0.0;
+
+    m_kalmanAngleRoll = 0.0;
+    m_kalmanUncertaintyAngleRoll = 0.0;
+    m_kalmanAnglePitch = 0.0;
+    m_kalmanUncertaintyAnglePitch = 0.0;
+}
+
+MPU6050::MPU6050()
+{
+    m_initDone = false;
+    m_OffsetAx = 0;
+    m_OffsetAy = 0;
+    m_OffsetAz = 0;
+    m_OffsetGx = 0;
+    m_OffsetGy = 0;
+    m_OffsetGz = 0;
+    m_OffsetAngleX = 0.0;
+    m_OffsetAngleY = 0.0;
+
+    m_kalmanAngleRoll = 0.0;
+    m_kalmanUncertaintyAngleRoll = 0.0;
+    m_kalmanAnglePitch = 0.0;
+    m_kalmanUncertaintyAnglePitch = 0.0;
+}
+
+void MPU6050::setI2C(I2C_HandleTypeDef* i2c)
+{
+    m_i2c = i2c;
+}
+
+void MPU6050::setDeviceAddress(std::uint8_t deviceAddress)
+{
+    m_device_address = deviceAddress << 1;
 }
 
 bool MPU6050::init()
@@ -228,4 +261,28 @@ std::array<float,2> MPU6050::kalmanFilter(float state, float uncertainty, float 
     return {state, uncertainty};
 
 }
+bool MPU6050::getInitDone()
+{
+    return m_initDone;
+}
 
+std::array<float,2> MPU6050::getKalmanOutput()
+{
+    std::array<float, 3> gyro = getGyro();
+    std::array<float, 2> accelAngle = getAccelAngle();
+
+    float rateRoll = gyro[0];
+    float ratePitch = gyro[1];
+    float angleRoll = accelAngle[0];
+    float anglePitch = accelAngle[1];
+
+    std::array<float, 2> kalmanOutput = kalmanFilter(m_kalmanAngleRoll, m_kalmanUncertaintyAngleRoll, rateRoll, angleRoll);
+    m_kalmanAngleRoll = kalmanOutput[0];
+    m_kalmanUncertaintyAngleRoll = kalmanOutput[1];
+
+    kalmanOutput = kalmanFilter(m_kalmanAnglePitch, m_kalmanUncertaintyAnglePitch, ratePitch, anglePitch);
+    m_kalmanAnglePitch = kalmanOutput[0];
+    m_kalmanUncertaintyAnglePitch = kalmanOutput[1];
+
+    return {m_kalmanAngleRoll, m_kalmanAnglePitch};
+}

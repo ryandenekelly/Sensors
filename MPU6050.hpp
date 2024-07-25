@@ -10,7 +10,7 @@ class MPU6050
 {
     public:
 	MPU6050(I2C_HandleTypeDef* i2c, std::uint8_t device_address);
-
+	MPU6050();
 	enum Offset
 	{
 	    Ax = 0,
@@ -22,6 +22,8 @@ class MPU6050
 	};
 
 	bool init();
+	void setI2C(I2C_HandleTypeDef*);
+	void setDeviceAddress(std::uint8_t);
 	std::array<float, 3> getAccel();
 	std::array<float, 2> getAccelAngle();
 	bool calibrateAccelAngle();
@@ -33,6 +35,9 @@ class MPU6050
 	void setOffset(Offset offset, float value);
 	std::array<float, 3> getAngle();
 	std::array<float, 3> getVel();
+
+	bool getInitDone();
+	std::array<float,2> getKalmanOutput();
 
 	static constexpr float GYRO_LSB = 16.38;
 	static constexpr float ACCEL_LSB = 16384.0;
@@ -53,6 +58,11 @@ class MPU6050
 	float m_OffsetGx;
 	float m_OffsetGy;
 	float m_OffsetGz;
+
+	float m_kalmanAngleRoll;
+	float m_kalmanUncertaintyAngleRoll;
+	float m_kalmanAnglePitch;
+	float m_kalmanUncertaintyAnglePitch;
 
 
 

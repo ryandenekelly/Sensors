@@ -1,10 +1,37 @@
 #include "MS5637.hpp"
 #include <cmath>
 
+MS5637::MS5637()
+{
+    m_i2c = nullptr;
+    m_i2cTimeout = 100;
+    m_initialized = false;
+    m_startingPressure = 1013.25;
+    m_pressureValue = NAN;
+    m_tempValue = NAN;
+    m_dataRefresh = 100;
+    m_lastPressureRead = 0;
+    m_lastTempRead = 0;
+    m_filtered = 0;
+}
+
 MS5637::MS5637(I2C_HandleTypeDef *i2c)
 {
     m_i2c = i2c;
     m_i2cTimeout = 100;
+    m_initialized = false;
+    m_startingPressure = 1013.25;
+    m_pressureValue = NAN;
+    m_tempValue = NAN;
+    m_dataRefresh = 100;
+    m_lastPressureRead = 0;
+    m_lastTempRead = 0;
+    m_filtered = 0;
+}
+
+bool MS5637::getInitialized()
+{
+    return m_initialized;
 }
 
 bool MS5637::writeCommand(std::uint8_t command)
@@ -33,8 +60,20 @@ bool MS5637::reset()
 
 bool MS5637::init()
 {
-    HAL_Delay(200);
-    return reset();
+    if(m_i2c)
+    {
+	HAL_Delay(200);
+	m_initialized = true;
+	return reset();
+
+    }
+    return false;
+
+}
+
+void MS5637::setI2C(I2C_HandleTypeDef *i2c)
+{
+    m_i2c = i2c;
 }
 
 std::vector<std::uint16_t> MS5637::getPROM(std::uint8_t startAddress, std::uint8_t size)
@@ -106,6 +145,7 @@ std::array<std::int64_t, 3> MS5637::compensate(std::int64_t dt, float temp)
 
     return {t2, off2, sens2};
 }
+
 std::array<float, 2> MS5637::getTempAndPressure(bool compensating)
 {
     // TODO: only need to read this once!
@@ -151,7 +191,43 @@ std::array<float, 2> MS5637::getTempAndPressure(bool compensating)
     return {tempActual, pressureActual};
 }
 
-float MS5637::getAltitude(float currentPressure, float startingPressure)
+void MS5637::getBaselinePressure(std::uint8_t n)
 {
-    return 44330.0 * (1 - pow(currentPressure/startingPressure, 1/5.255));
+    float baseline = 0.0;
+    for(std::uint8_t i=0; i<n; i++)
+    {
+	baseline += getTempAndPressure()[1];
+    }
+    baseline /= (float)16;
+    m_startingPressure = baseline;
 }
+
+float MS5637::getAltitude()
+{
+    return 44330.0 * (1 - pow(m_pressureValue/m_startingPressure, 1/5.255));
+}
+
+float MS5637::getPressure()
+{
+    if((HAL_GetTick() - m_lastPressureRead) > m_dataRefresh)
+    {
+	m_pressureValue = getTempAndPressure()[1];
+    }
+    return m_pressureValue;
+}
+
+float MS5637::getTemp()
+{
+    if((HAL_GetTick() - m_lastTempRead) > m_dataRefresh)
+    {
+	m_tempValue = getTempAndPressure()[0];
+    }
+    return m_tempValue;
+}
+
+float MS5637::getAltitudeFiltered()
+{
+    m_filtered = (0.9 * m_filtered)  + (0.1 * getAltitude());
+    return m_filtered;
+}
+
