@@ -33,23 +33,24 @@ class MS5637
 	    std::uint32_t convertAndRead(std::uint8_t dX, std::uint8_t OSR);
 	    void setI2C(I2C_HandleTypeDef *i2c);
 	    bool getInitialized();
-	    void getBaselinePressure(std::uint8_t n);
+	    void getBaselinePressure(std::uint16_t n);
+	    void getBaselineAltitude(std::uint32_t n);
 	    float getTemp();
 	    float getPressure();
 	    float getAltitude();
-	    float getAltitudeFiltered();
+	    float getAltitude(float pressure);
 
     private:
 	    I2C_HandleTypeDef *m_i2c;
 	    std::uint16_t m_i2cTimeout;
 	    bool m_initialized;
-	    float m_startingPressure;
+	    float m_baselinePressure;
+	    float m_baselineAltitude;
 	    float m_pressureValue;
 	    float m_tempValue;
 	    std::uint32_t m_dataRefresh;
 	    std::uint32_t m_lastPressureRead;
 	    std::uint32_t m_lastTempRead;
-	    float m_filtered;
 
 	    bool writeCommand(std::uint8_t command);
 	    std::vector<std::uint8_t> readCommand(std::uint8_t command, std::uint8_t size);

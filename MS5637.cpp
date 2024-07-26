@@ -6,13 +6,13 @@ MS5637::MS5637()
     m_i2c = nullptr;
     m_i2cTimeout = 100;
     m_initialized = false;
-    m_startingPressure = 1013.25;
+    m_baselinePressure = 1013.25;
     m_pressureValue = NAN;
     m_tempValue = NAN;
     m_dataRefresh = 100;
     m_lastPressureRead = 0;
     m_lastTempRead = 0;
-    m_filtered = 0;
+    m_baselineAltitude = 0.0;
 }
 
 MS5637::MS5637(I2C_HandleTypeDef *i2c)
@@ -20,13 +20,13 @@ MS5637::MS5637(I2C_HandleTypeDef *i2c)
     m_i2c = i2c;
     m_i2cTimeout = 100;
     m_initialized = false;
-    m_startingPressure = 1013.25;
+    m_baselinePressure = 1013.25;
     m_pressureValue = NAN;
     m_tempValue = NAN;
     m_dataRefresh = 100;
     m_lastPressureRead = 0;
     m_lastTempRead = 0;
-    m_filtered = 0;
+    m_baselineAltitude = 0.0;
 }
 
 bool MS5637::getInitialized()
@@ -191,20 +191,38 @@ std::array<float, 2> MS5637::getTempAndPressure(bool compensating)
     return {tempActual, pressureActual};
 }
 
-void MS5637::getBaselinePressure(std::uint8_t n)
+void MS5637::getBaselinePressure(std::uint16_t n)
 {
     float baseline = 0.0;
-    for(std::uint8_t i=0; i<n; i++)
+    for(std::uint32_t i=0; i<n; i++)
     {
 	baseline += getTempAndPressure()[1];
     }
-    baseline /= (float)16;
-    m_startingPressure = baseline;
+    baseline /= (float)n;
+    m_baselinePressure = baseline;
+}
+
+void MS5637::getBaselineAltitude(std::uint32_t n)
+{
+    float baseline = 0.0;
+    for(std::uint32_t i=0; i<n; i++)
+    {
+	baseline += getAltitude();
+    }
+    baseline /= (float)n;
+    m_baselineAltitude = baseline;
 }
 
 float MS5637::getAltitude()
 {
-    return 44330.0 * (1 - pow(m_pressureValue/m_startingPressure, 1/5.255));
+    float calculatedAlt = 44330.0 * (1.0 - pow(getPressure()/m_baselinePressure, 1.0/5.255));
+    return calculatedAlt - m_baselineAltitude;
+}
+
+float MS5637::getAltitude(float pressure)
+{
+    float calculatedAlt = 44330.0 * (1.0 - pow(pressure/m_baselinePressure, 1.0/5.255));
+    return calculatedAlt - m_baselineAltitude;
 }
 
 float MS5637::getPressure()
@@ -223,11 +241,5 @@ float MS5637::getTemp()
 	m_tempValue = getTempAndPressure()[0];
     }
     return m_tempValue;
-}
-
-float MS5637::getAltitudeFiltered()
-{
-    m_filtered = (0.9 * m_filtered)  + (0.1 * getAltitude());
-    return m_filtered;
 }
 
