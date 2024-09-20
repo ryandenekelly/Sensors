@@ -1,3 +1,5 @@
+/* some parts derived from https://www.arduino.cc/reference/en/libraries/mpu6050/ */
+
 #include "MPU6050_REG.hpp"
 #include <cstdint>
 #include <array>
