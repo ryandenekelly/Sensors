@@ -1,3 +1,5 @@
+/* derived from https://github.com/LowPowerLab/RFM69 */
+
 #pragma once
 
 #include "main.h"
