@@ -1,3 +1,4 @@
+/* derived from https://github.com/sparkfun/SparkFun_MS5637_Arduino_Library */
 #pragma once
 #include <cstdint>
 #include <vector>
