@@ -49,6 +49,10 @@ class RFM69
 	bool send(std::uint8_t* data, std::uint8_t length);
 
 
+	bool isTxSent();
+	bool isRxRecieve();
+	bool isRxPending();
+	std::vector<std::uint8_t> getLastMessage();
 
     private:
 	SPI_HandleTypeDef *m_spiHandler;
@@ -58,6 +62,11 @@ class RFM69
 	std::uint16_t m_resetPin;
 	std::uint8_t m_networkID;
 	std::vector<std::uint8_t> m_fifo;
+
+	bool m_txSent;
+	bool m_rxRecieved;
+	bool m_rxPending;
+	std::vector<std::uint8_t> m_lastMessage;
 
 	const std::uint32_t m_spiTimeout = 100;
 };
