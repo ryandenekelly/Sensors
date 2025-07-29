@@ -198,9 +198,10 @@ bool RFM69::send(std::uint8_t* data, std::uint8_t length)
 
     while(length--)
     {
-	writeReg(RFM::RegFifo, *data++);
+    	writeReg(RFM::RegFifo, *data++);
     }
 
+    m_txSent = true;
     changeMode(RFM::Mode::Tx);
 
 }
@@ -424,9 +425,10 @@ void RFM69::readFIFO()
     std::uint8_t fifo[] = {0};
     while((fifo && RFM::FifoNotEmpty) == 0x00)
     {
-	readReg(RFM::RegFifo, fifo);
-	m_fifo.push_back(fifo[0]);
+		readReg(RFM::RegFifo, fifo);
+		m_fifo.push_back(fifo[0]);
     }
+    m_lastMessage = m_fifo;
 
 }
 
@@ -512,5 +514,22 @@ bool RFM69::recieve()
 	readReg(RFM::RegIrqFlags2, irqFlags2);
     }
     return false;
+}
+
+bool RFM69::isTxSent()
+{
+	return m_txSent;
+}
+bool RFM69::isRxRecieve()
+{
+	return m_rxRecieved;
+}
+bool RFM69::isRxPending()
+{
+	return m_rxPending;
+}
+std::vector<std::uint8_t> RFM69::getLastMessage()
+{
+	return m_lastMessage;
 }
 
