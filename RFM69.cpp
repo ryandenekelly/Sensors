@@ -511,7 +511,7 @@ bool RFM69::recieve()
     std::uint8_t irqFlags2[] = {0};
     if(irqFlags2[0] & RFM::PayloadReady)
     {
-	readReg(RFM::RegIrqFlags2, irqFlags2);
+    	readReg(RFM::RegIrqFlags2, irqFlags2);
     }
     return false;
 }
@@ -524,6 +524,17 @@ bool RFM69::isRxRecieve()
 {
 	return m_rxRecieved;
 }
+
+void RFM69::setIsTxSent(bool value)
+{
+	m_txSent = value;
+}
+void RFM69::setIsRxRecieve(bool value)
+{
+	m_rxRecieved = value;
+}
+
+
 bool RFM69::isRxPending()
 {
 	return m_rxPending;

@@ -50,8 +50,9 @@ class RFM69
 	void encrypt(std::vector<std::uint8_t> key);
 	bool send(std::uint8_t* data, std::uint8_t length);
 
-
+	void setIsTxSent(bool value);
 	bool isTxSent();
+	void setIsRxRecieve(bool value);
 	bool isRxRecieve();
 	bool isRxPending();
 	std::vector<std::uint8_t> getLastMessage();
